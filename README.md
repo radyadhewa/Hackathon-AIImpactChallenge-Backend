@@ -1,76 +1,155 @@
 # Keroyok.AI Backend
 
-This repository contains the AI backend scaffold for the Keroyok.AI PM-agent MVP:
+Agentic AI-powered talent marketplace with 3 integrated agents: Talent Acquisition, PM (Project Manager), and Secretary.
 
-- `Task Breakdown` subagent
-- `Work Checker` subagent
-- `Reporter` subagent
-- shared `Context Bank` backed by local JSON storage and optionally Azure AI Search
-- Azure-first runtime shaped around Microsoft Agent Framework and Azure OpenAI
+## Installation
 
-## Architecture
-
-The backend is built so you can develop locally before your Azure resources are fully wired:
-
-- `FastAPI` exposes the PM-agent endpoints.
-- `PMAgentService` orchestrates the three PM subagents.
-- `ContextBankService` stores project state locally and can mirror searchable memory into Azure AI Search.
-- `MicrosoftAgentRuntime` is the primary chat runtime for Azure OpenAI via Microsoft Agent Framework.
-- `LocalTemplateRuntime` is a safe fallback so the backend still runs before Azure credentials and deployments exist.
-
-## Endpoints
-
-- `POST /api/v1/pm/projects/bootstrap`
-- `POST /api/v1/pm/projects/{project_id}/updates`
-- `GET /api/v1/pm/projects/{project_id}/context`
-- `POST /api/v1/pm/task-breakdown`
-- `POST /api/v1/pm/work-check`
-- `POST /api/v1/pm/reports`
-
-## Local Setup
+### 1. Clone and create virtual environment
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate  # macOS/Linux
+```
+
+### 2. Install dependencies
+
+```bash
 pip install -e .[dev]
+```
+
+### 3. Configure environment
+
+```bash
 copy .env.example .env
+```
+
+Edit `.env` with your settings. See Azure Setup section below.
+
+### 4. Run the server
+
+```bash
 uvicorn app.main:app --reload
 ```
 
-## Azure Setup Notes
+Server runs at `http://127.0.0.1:8000`
 
-1. Create your Azure OpenAI resource and deployment names.
-2. Create your Azure AI Search service and set the index name.
-3. Fill in `.env`.
-4. Restart the API.
+## Azure Setup (Optional)
 
-If Azure settings are incomplete, the app automatically falls back to a deterministic local runtime for developer testing.
+The backend works locally without Azure. To enable AI features:
 
-## Example Flow
+1. **Azure OpenAI** - Create resource and deployment:
+   - `AZURE_OPENAI_ENDPOINT` - e.g., `https://your-resource.openai.azure.com/`
+   - `AZURE_OPENAI_API_KEY` - Your API key
+   - `AZURE_OPENAI_CHAT_DEPLOYMENT` - Chat model deployment name
+   - `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` - Embedding model name
 
-1. Bootstrap project context:
+2. **Azure AI Search** - For vector search:
+   - `AZURE_AI_SEARCH_ENDPOINT` - e.g., `https://your-search-service.search.windows.net`
+   - `AZURE_AI_SEARCH_API_KEY` - Your search API key
+   - `AZURE_AI_SEARCH_INDEX_NAME` - Index name (default: `keroyok-context-bank`)
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/pm/projects/bootstrap ^
-  -H "Content-Type: application/json" ^
-  -d "{\"overview\":{\"project_id\":\"proj-demo\",\"project_name\":\"Enterprise Website Revamp\",\"description\":\"Build a multilingual B2B marketing site.\",\"scope\":\"Discovery, design QA, frontend build, CMS handoff.\",\"success_criteria\":[\"Launch in 6 weeks\",\"Mobile responsive\",\"CMS editable\"],\"constraints\":[\"Budget capped\",\"Async collaboration only\"],\"freelancers\":[{\"name\":\"Dina\",\"role\":\"Frontend Engineer\",\"hours_per_week\":20,\"timezone\":\"Asia/Jakarta\",\"skills\":[\"Next.js\",\"Tailwind\"]},{\"name\":\"Rafi\",\"role\":\"Designer\",\"hours_per_week\":12,\"timezone\":\"Asia/Jakarta\",\"skills\":[\"Figma\",\"Design systems\"]}],\"milestones\":[{\"name\":\"Design freeze\",\"due_date\":\"2026-05-15\",\"success_definition\":\"Approved UI kit\"}]}}"
+If Azure settings are incomplete, the app falls back to a deterministic local runtime.
+
+## Codebase Architecture
+
+```
+app/
+├── main.py                    # FastAPI app factory
+├── core/
+│   ├── config.py             # Settings (environment variables)
+│   └── dependencies.py      # Service dependency injection
+├── models/
+│   ├── domain.py             # Core data models
+│   └── api.py                 # Request/response schemas
+├── agents/
+│   ├── pm_agent.py            # PM Agent orchestration
+│   ├── talent_agent.py        # Talent Agent orchestration
+│   ├── secretary_agent.py    # Secretary Agent orchestration
+│   └── prompts.py            # Subagent instruction prompts
+├── services/
+│   ├── llm.py                 # LLM runtime (Azure + local)
+│   ├── context_bank.py       # Project memory storage
+│   ├── chat_service.py       # Chat/conversation storage
+│   ├── profile_service.py   # Freelancer profile & matching
+│   ├── timeline_service.py   # Project scheduling
+│   └── azure_search.py       # Azure AI Search adapter
+└── api/routes/
+    ├── pm_agent.py            # PM Agent endpoints
+    ├── talent_agent.py       # Talent Agent endpoints
+    └── secretary_agent.py   # Secretary Agent endpoints
 ```
 
-2. Ask the PM agent to break work down:
+## How the 3 Agents Work Together
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/v1/pm/task-breakdown ^
-  -H "Content-Type: application/json" ^
-  -d "{\"project_id\":\"proj-demo\",\"delivery_goal\":\"Launch MVP website\",\"source_material\":\"Client wants polished enterprise feel, CMS editing, and responsive pages for product + case studies.\"}"
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    KERoyok.AI BACKEND                       │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│  │  Agent 1     │  │  Agent 2     │  │  Agent 3     │        │
+│  │  TALENT     │  │  PM          │  │  SECRETARY  │        │
+│  │              │  │              │  │              │        │
+│  │ • CV Parser  │  │ • Task Break │  │ • Chat Summ  │        │
+│  │ • Profile Gen│  │ • Work Check │  │ • MoM Gen    │        │
+│  │ • Matchmake │  │ • Reporter   │  │ • Chatbot    │        │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘        │
+│         │                 │                 │               │
+│         └─────────────────┼─────────────────┘               │
+│                           │                                 │
+│              ┌────────────┴────────────┐                   │
+│              │      CONTEXT BANK        │                    │
+│              │  - Project memory         │                   │
+│              │  - Timelines              │                   │
+│              │  - Agent events           │                   │
+│              │  - Freelancer profiles   │                   │
+│              │  - Chat history           │                   │
+│              └──────────────────────────┘                   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Code Map
+### Agent 1: Talent Acquisition
+- **CV Parser** - Converts resume/CV text to structured profile
+- **Profile Generator** - AI-enhances profile headline and bio
+- **Matchmaking** - Vector similarity matching for projects
 
-- `app/main.py` app factory
-- `app/api/routes/pm_agent.py` API endpoints
-- `app/agents/pm_agent.py` PM-agent orchestration
-- `app/agents/prompts.py` subagent instructions
-- `app/services/context_bank.py` shared memory
-- `app/services/azure_search.py` optional Azure AI Search vector memory adapter
-- `app/services/llm.py` Microsoft Agent Framework runtime + local fallback
+### Agent 2: PM (Project Manager)
+- **Task Breakdown** - Converts project scope into actionable tasks
+- **Work Checker** - Validates deliverables against scope
+- **Reporter** - Generates project health reports
+- **Timeline** - Critical path scheduling
 
+### Agent 3: Secretary
+- **Chat Summarizer** - Extracts decisions and action items from chat
+- **MoM Generator** - Creates minutes from meeting transcripts
+- **Chatbot Assistant** - Suggests response options
+
+## Key Concepts
+
+### Context Bank
+All agents write to a shared **Context Bank** - local JSON storage backed by Azure AI Search. This serves as the audit trail and cross-agent communication layer.
+
+### Agent Events
+When Secretary or Talent agents create action items, they write **AgentEvent** records to the Context Bank. The PM Agent reads these events and responds.
+
+### Embeddings
+Freelancer profiles and project descriptions are embedded for semantic matching using Azure OpenAI embeddings.
+
+## Documentation
+
+- **API Usage Guide**: [`api-usage.md`](./api-usage.md) - Full endpoint reference, payloads, response shapes, and data models
+- **Development Logs**: [`.sisyphus/progress/`](.sisyphus/progress/) - Session-by-session implementation notes
+
+## Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+## Tech Stack
+
+- **FastAPI** - Web framework
+- **Pydantic v2** - Data validation
+- **Azure OpenAI** - LLM embeddings and chat
+- **Azure AI Search** - Vector similarity search
+- **Python 3.11+** - Runtime
