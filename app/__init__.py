@@ -1,0 +1,2 @@
+"""Keroyok.AI backend package."""
+
