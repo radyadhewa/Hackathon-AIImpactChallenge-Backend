@@ -18,6 +18,8 @@ from app.models.api import (
     ProjectBootstrapRequest,
     ProjectContextResponse,
     ProjectEventsResponse,
+    PmLogEntry,
+    PmLogListResponse,
     ProjectUpdateRequest,
     ReportRequest,
     ReportResponse,
@@ -433,6 +435,37 @@ class PMAgentService:
         await self._require_project(project_id)
         events = await self._context_bank.get_agent_events(project_id, target_agent=target_agent)
         return ProjectEventsResponse(events=events)
+
+    async def list_logs(
+        self,
+        project_id: str,
+        action_type: str | None = None,
+        limit: int = 50,
+    ) -> PmLogListResponse:
+        await self._require_project(project_id)
+        if not self._log_store:
+            return PmLogListResponse(logs=[])
+
+        logs = await self._log_store.list_logs(
+            project_id=project_id,
+            action_type=action_type,
+            limit=limit,
+        )
+        return PmLogListResponse(
+            logs=[
+                PmLogEntry(
+                    log_id=item.get("id", ""),
+                    project_id=item.get("project_id", project_id),
+                    action_type=item.get("action_type", ""),
+                    summary=item.get("summary", ""),
+                    payload=item.get("payload", {}),
+                    actor=item.get("actor", ""),
+                    metadata=item.get("metadata", {}),
+                    created_at=item.get("created_at", ""),
+                )
+                for item in logs
+            ]
+        )
 
     async def resolve_event(
         self,

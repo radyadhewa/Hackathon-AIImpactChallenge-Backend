@@ -108,6 +108,21 @@ class ProjectEventsResponse(BaseModel):
     events: list[AgentEvent]
 
 
+class PmLogEntry(BaseModel):
+    log_id: str
+    project_id: str
+    action_type: str
+    summary: str
+    payload: dict
+    actor: str
+    metadata: dict
+    created_at: str
+
+
+class PmLogListResponse(BaseModel):
+    logs: list[PmLogEntry]
+
+
 class ResolveEventRequest(BaseModel):
     resolved_by: str = "pm_agent"
 

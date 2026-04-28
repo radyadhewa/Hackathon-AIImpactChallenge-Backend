@@ -94,3 +94,38 @@ class PmLogStore:
             container.upsert_item(log_item)
 
         await asyncio.to_thread(_write)
+
+    async def list_logs(
+        self,
+        *,
+        project_id: str,
+        limit: int = 50,
+        action_type: str | None = None,
+    ) -> list[dict[str, Any]]:
+        if not self.enabled:
+            return []
+
+        await self._ensure_container()
+        client = self._client()
+        if client is None:
+            return []
+
+        query = "SELECT * FROM c WHERE c.project_id = @project_id"
+        parameters = [{"name": "@project_id", "value": project_id}]
+        if action_type:
+            query += " AND c.action_type = @action_type"
+            parameters.append({"name": "@action_type", "value": action_type})
+        query += " ORDER BY c.created_at DESC"
+
+        def _query() -> list[dict[str, Any]]:
+            database = client.get_database_client(self._settings.cosmos_database)
+            container = database.get_container_client(self._settings.cosmos_pm_log_container)
+            items = container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True,
+            )
+            results = list(items)
+            return results[:limit]
+
+        return await asyncio.to_thread(_query)

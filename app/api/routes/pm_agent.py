@@ -7,6 +7,7 @@ from app.models.api import (
     ProjectBootstrapRequest,
     ProjectContextResponse,
     ProjectEventsResponse,
+    PmLogListResponse,
     ProjectUpdateRequest,
     ReportRequest,
     ReportResponse,
@@ -119,6 +120,16 @@ async def get_project_events(
     service: PMAgentService = Depends(get_pm_service),
 ) -> ProjectEventsResponse:
     return await service.get_project_events(project_id, target_agent)
+
+
+@router.get("/projects/{project_id}/logs", response_model=PmLogListResponse)
+async def get_project_logs(
+    project_id: str,
+    action_type: str | None = None,
+    limit: int = 50,
+    service: PMAgentService = Depends(get_pm_service),
+) -> PmLogListResponse:
+    return await service.list_logs(project_id, action_type=action_type, limit=limit)
 
 
 @router.post("/projects/{project_id}/events/{event_id}/resolve")

@@ -135,6 +135,34 @@ Creates the project context file and initial snapshot.
 
 ---
 
+## 1.3 PM Logs
+
+### `GET /api/v1/pm/projects/{project_id}/logs`
+Retrieve PM agent logs from Cosmos DB.
+
+**Query params:**
+- `action_type` (optional) – filter by action type (e.g., `report`, `work_check`)
+- `limit` (optional) – max results (default 50)
+
+**Response model:** `PmLogListResponse`
+
+```json
+{
+  "logs": [
+    {
+      "log_id": "proj-1:report:2026-04-28T10:00:00Z",
+      "project_id": "proj-1",
+      "action_type": "report",
+      "summary": "Project is moving with early planning momentum.",
+      "payload": {"cadence": "weekly", "overall_status": "watch"},
+      "actor": "reporter_subagent",
+      "metadata": {},
+      "created_at": "2026-04-28T10:00:00Z"
+    }
+  ]
+}
+```
+
 ## 1.3 Add Project Update
 
 ### `POST /api/v1/pm/projects/{project_id}/updates`
