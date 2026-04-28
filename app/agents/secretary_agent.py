@@ -75,6 +75,15 @@ class SecretaryAgentService:
         self,
         payload: MessageSendRequest,
     ) -> MessageResponse:
+        conversation = await self._chat_service.get_conversation(
+            payload.project_id,
+            payload.conversation_id,
+        )
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        if conversation.project_id != payload.project_id:
+            raise HTTPException(status_code=400, detail="Conversation does not belong to project")
+
         message = await self._chat_service.send_message(
             project_id=payload.project_id,
             conversation_id=payload.conversation_id,

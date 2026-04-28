@@ -123,6 +123,7 @@ def test_conversation_flow(tmp_path: Path) -> None:
     message1_response = client.post(
         "/api/v1/secretary/messages",
         json={
+            "project_id": "proj-chat",
             "conversation_id": conversation_id,
             "sender_type": "freelancer",
             "sender_id": "user-dina",
@@ -136,6 +137,7 @@ def test_conversation_flow(tmp_path: Path) -> None:
     message2_response = client.post(
         "/api/v1/secretary/messages",
         json={
+            "project_id": "proj-chat",
             "conversation_id": conversation_id,
             "sender_type": "freelancer",
             "sender_id": "user-rafi",
@@ -148,6 +150,7 @@ def test_conversation_flow(tmp_path: Path) -> None:
     history_response = client.post(
         "/api/v1/secretary/chat/history",
         json={
+            "project_id": "proj-chat",
             "conversation_id": conversation_id,
             "limit": 10,
         },
@@ -173,6 +176,7 @@ def test_chat_summarization_creates_events(tmp_path: Path) -> None:
     client.post(
         "/api/v1/secretary/messages",
         json={
+            "project_id": "proj-summary",
             "conversation_id": conversation_id,
             "sender_type": "freelancer",
             "sender_id": "user-dina",
@@ -183,6 +187,7 @@ def test_chat_summarization_creates_events(tmp_path: Path) -> None:
     client.post(
         "/api/v1/secretary/messages",
         json={
+            "project_id": "proj-summary",
             "conversation_id": conversation_id,
             "sender_type": "freelancer",
             "sender_id": "user-rafi",
@@ -265,6 +270,7 @@ def test_secretary_suggest(tmp_path: Path) -> None:
     client.post(
         "/api/v1/secretary/messages",
         json={
+            "project_id": "proj-suggest",
             "conversation_id": conversation_id,
             "sender_type": "client",
             "sender_id": "user-client",
