@@ -8,10 +8,11 @@ from app.core.config import Settings
 
 try:
     from azure.cosmos import CosmosClient
-    from azure.cosmos.exceptions import CosmosResourceExistsError
+    from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
 except ImportError:  # pragma: no cover
     CosmosClient = None
     CosmosResourceExistsError = None
+    CosmosResourceNotFoundError = None
 
 
 class PmLogStore:
@@ -56,8 +57,11 @@ class PmLogStore:
             except CosmosResourceExistsError:
                 pass
 
-        await asyncio.to_thread(_init)
-        self._initialized = True
+        try:
+            await asyncio.to_thread(_init)
+            self._initialized = True
+        except Exception:
+            return
 
     async def log_action(
         self,
@@ -72,28 +76,31 @@ class PmLogStore:
         if not self.enabled:
             return
 
-        await self._ensure_container()
-        client = self._client()
-        if client is None:
+        try:
+            await self._ensure_container()
+            client = self._client()
+            if client is None:
+                return
+
+            log_item = {
+                "id": f"{project_id}:{action_type}:{datetime.now(timezone.utc).isoformat()}",
+                "project_id": project_id,
+                "action_type": action_type,
+                "summary": summary,
+                "payload": payload,
+                "actor": actor,
+                "metadata": metadata or {},
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+
+            def _write() -> None:
+                database = client.get_database_client(self._settings.cosmos_database)
+                container = database.get_container_client(self._settings.cosmos_pm_log_container)
+                container.upsert_item(log_item)
+
+            await asyncio.to_thread(_write)
+        except Exception:
             return
-
-        log_item = {
-            "id": f"{project_id}:{action_type}:{datetime.now(timezone.utc).isoformat()}",
-            "project_id": project_id,
-            "action_type": action_type,
-            "summary": summary,
-            "payload": payload,
-            "actor": actor,
-            "metadata": metadata or {},
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-
-        def _write() -> None:
-            database = client.get_database_client(self._settings.cosmos_database)
-            container = database.get_container_client(self._settings.cosmos_pm_log_container)
-            container.upsert_item(log_item)
-
-        await asyncio.to_thread(_write)
 
     async def list_logs(
         self,
@@ -106,28 +113,30 @@ class PmLogStore:
         if not self.enabled:
             return []
 
-        await self._ensure_container()
-        client = self._client()
-        if client is None:
+        try:
+            client = self._client()
+            if client is None:
+                return []
+
+            query = "SELECT * FROM c WHERE c.project_id = @project_id"
+            parameters = [{"name": "@project_id", "value": project_id}]
+            if action_type:
+                query += " AND c.action_type = @action_type"
+                parameters.append({"name": "@action_type", "value": action_type})
+            query += " ORDER BY c.created_at DESC OFFSET @offset LIMIT @limit"
+            parameters.append({"name": "@offset", "value": offset})
+            parameters.append({"name": "@limit", "value": limit})
+
+            def _query() -> list[dict[str, Any]]:
+                database = client.get_database_client(self._settings.cosmos_database)
+                container = database.get_container_client(self._settings.cosmos_pm_log_container)
+                items = container.query_items(
+                    query=query,
+                    parameters=parameters,
+                    enable_cross_partition_query=True,
+                )
+                return list(items)
+
+            return await asyncio.to_thread(_query)
+        except Exception:
             return []
-
-        query = "SELECT * FROM c WHERE c.project_id = @project_id"
-        parameters = [{"name": "@project_id", "value": project_id}]
-        if action_type:
-            query += " AND c.action_type = @action_type"
-            parameters.append({"name": "@action_type", "value": action_type})
-        query += " ORDER BY c.created_at DESC OFFSET @offset LIMIT @limit"
-        parameters.append({"name": "@offset", "value": offset})
-        parameters.append({"name": "@limit", "value": limit})
-
-        def _query() -> list[dict[str, Any]]:
-            database = client.get_database_client(self._settings.cosmos_database)
-            container = database.get_container_client(self._settings.cosmos_pm_log_container)
-            items = container.query_items(
-                query=query,
-                parameters=parameters,
-                enable_cross_partition_query=True,
-            )
-            return list(items)
-
-        return await asyncio.to_thread(_query)

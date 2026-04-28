@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 from app.core.config import Settings
@@ -43,6 +44,7 @@ class AzureSearchContextBankIndex:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._index_ready = False
+        self._logger = logging.getLogger(__name__)
 
     @property
     def enabled(self) -> bool:
@@ -150,26 +152,30 @@ class AzureSearchContextBankIndex:
         if not self.enabled:
             return
 
-        await self.ensure_index()
-        client = self._search_client()
-        if client is None:
+        try:
+            await self.ensure_index()
+            client = self._search_client()
+            if client is None:
+                return
+
+            document = {
+                "id": record.id,
+                "project_id": record.project_id,
+                "entry_type": record.entry_type,
+                "title": record.title,
+                "content": record.content,
+                "tags": record.tags,
+                "source": record.source or "",
+                "metadata_json": json.dumps(record.metadata),
+                "created_at": record.created_at.isoformat(),
+            }
+            if vector:
+                document["content_vector"] = vector
+
+            await asyncio.to_thread(client.upload_documents, [document])
+        except Exception as exc:  # pragma: no cover - network/index dependent
+            self._logger.warning("Azure Search upsert failed: %s", exc)
             return
-
-        document = {
-            "id": record.id,
-            "project_id": record.project_id,
-            "entry_type": record.entry_type,
-            "title": record.title,
-            "content": record.content,
-            "tags": record.tags,
-            "source": record.source or "",
-            "metadata_json": json.dumps(record.metadata),
-            "created_at": record.created_at.isoformat(),
-        }
-        if vector:
-            document["content_vector"] = vector
-
-        await asyncio.to_thread(client.upload_documents, [document])
 
     async def search(
         self,
@@ -181,43 +187,47 @@ class AzureSearchContextBankIndex:
         if not self.enabled:
             return []
 
-        await self.ensure_index()
-        client = self._search_client()
-        if client is None:
-            return []
+        try:
+            await self.ensure_index()
+            client = self._search_client()
+            if client is None:
+                return []
 
-        def _run_search() -> list[dict[str, Any]]:
-            search_kwargs: dict[str, Any] = {
-                "search_text": query_text or "*",
-                "filter": f"project_id eq '{project_id}'",
-                "top": top,
-            }
-            if vector and VectorizedQuery:
-                search_kwargs["vector_queries"] = [
-                    VectorizedQuery(
-                        vector=vector,
-                        k_nearest_neighbors=top,
-                        fields="content_vector",
+            def _run_search() -> list[dict[str, Any]]:
+                search_kwargs: dict[str, Any] = {
+                    "search_text": query_text or "*",
+                    "filter": f"project_id eq '{project_id}'",
+                    "top": top,
+                }
+                if vector and VectorizedQuery:
+                    search_kwargs["vector_queries"] = [
+                        VectorizedQuery(
+                            vector=vector,
+                            k_nearest_neighbors=top,
+                            fields="content_vector",
+                        )
+                    ]
+
+                return list(client.search(**search_kwargs))
+
+            raw_results = await asyncio.to_thread(_run_search)
+            parsed: list[ContextBankRecord] = []
+            for item in raw_results:
+                metadata_json = item.get("metadata_json") or "{}"
+                parsed.append(
+                    ContextBankRecord(
+                        id=item["id"],
+                        project_id=item["project_id"],
+                        entry_type=item["entry_type"],
+                        title=item["title"],
+                        content=item["content"],
+                        tags=item.get("tags") or [],
+                        metadata=json.loads(metadata_json),
+                        source=item.get("source") or None,
+                        created_at=item["created_at"],
                     )
-                ]
-
-            return list(client.search(**search_kwargs))
-
-        raw_results = await asyncio.to_thread(_run_search)
-        parsed: list[ContextBankRecord] = []
-        for item in raw_results:
-            metadata_json = item.get("metadata_json") or "{}"
-            parsed.append(
-                ContextBankRecord(
-                    id=item["id"],
-                    project_id=item["project_id"],
-                    entry_type=item["entry_type"],
-                    title=item["title"],
-                    content=item["content"],
-                    tags=item.get("tags") or [],
-                    metadata=json.loads(metadata_json),
-                    source=item.get("source") or None,
-                    created_at=item["created_at"],
                 )
-            )
-        return parsed
+            return parsed
+        except Exception as exc:  # pragma: no cover - network/index dependent
+            self._logger.warning("Azure Search query failed: %s", exc)
+            return []

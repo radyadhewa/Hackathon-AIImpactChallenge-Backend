@@ -271,4 +271,3 @@ class ContextBankService:
                 await asyncio.to_thread(_write)
                 return event
         return None
-

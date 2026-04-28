@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC, abstractmethod
 
 from app.core.config import Settings
@@ -199,6 +200,7 @@ class LocalTemplateRuntime(BaseRuntime):
 class EmbeddingService:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+        self._logger = logging.getLogger(__name__)
 
     async def embed_text(self, text: str) -> list[float] | None:
         if (
@@ -213,8 +215,12 @@ class EmbeddingService:
             api_key=self._settings.azure_foundry_api_key_value,
             base_url=f"{self._settings.azure_foundry_endpoint.rstrip('/')}/openai/v1/",
         )
-        response = await client.embeddings.create(
-            model=self._settings.azure_foundry_embedding_deployment,
-            input=text,
-        )
-        return response.data[0].embedding
+        try:
+            response = await client.embeddings.create(
+                model=self._settings.azure_foundry_embedding_deployment,
+                input=text,
+            )
+            return response.data[0].embedding
+        except Exception as exc:  # pragma: no cover - network dependent
+            self._logger.warning("Embedding request failed: %s", exc)
+            return None
