@@ -100,6 +100,7 @@ class PmLogStore:
         *,
         project_id: str,
         limit: int = 50,
+        offset: int = 0,
         action_type: str | None = None,
     ) -> list[dict[str, Any]]:
         if not self.enabled:
@@ -115,7 +116,9 @@ class PmLogStore:
         if action_type:
             query += " AND c.action_type = @action_type"
             parameters.append({"name": "@action_type", "value": action_type})
-        query += " ORDER BY c.created_at DESC"
+        query += " ORDER BY c.created_at DESC OFFSET @offset LIMIT @limit"
+        parameters.append({"name": "@offset", "value": offset})
+        parameters.append({"name": "@limit", "value": limit})
 
         def _query() -> list[dict[str, Any]]:
             database = client.get_database_client(self._settings.cosmos_database)
@@ -125,7 +128,6 @@ class PmLogStore:
                 parameters=parameters,
                 enable_cross_partition_query=True,
             )
-            results = list(items)
-            return results[:limit]
+            return list(items)
 
         return await asyncio.to_thread(_query)

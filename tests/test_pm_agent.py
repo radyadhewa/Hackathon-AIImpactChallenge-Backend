@@ -121,6 +121,9 @@ def test_pm_agent_endpoints(tmp_path: Path) -> None:
     assert logs_response.status_code == 200
     assert "logs" in logs_response.json()
 
+    paged_logs_response = client.get("/api/v1/pm/projects/proj-1/logs", params={"limit": 10, "offset": 0})
+    assert paged_logs_response.status_code == 200
+
     update_response = client.post(
         "/api/v1/pm/projects/proj-1/updates",
         json={

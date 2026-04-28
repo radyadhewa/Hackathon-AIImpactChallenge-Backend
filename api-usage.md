@@ -143,6 +143,7 @@ Retrieve PM agent logs from Cosmos DB.
 **Query params:**
 - `action_type` (optional) – filter by action type (e.g., `report`, `work_check`)
 - `limit` (optional) – max results (default 50)
+- `offset` (optional) – skip the first N results (default 0)
 
 **Response model:** `PmLogListResponse`
 

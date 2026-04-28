@@ -127,9 +127,15 @@ async def get_project_logs(
     project_id: str,
     action_type: str | None = None,
     limit: int = 50,
+    offset: int = 0,
     service: PMAgentService = Depends(get_pm_service),
 ) -> PmLogListResponse:
-    return await service.list_logs(project_id, action_type=action_type, limit=limit)
+    return await service.list_logs(
+        project_id,
+        action_type=action_type,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.post("/projects/{project_id}/events/{event_id}/resolve")

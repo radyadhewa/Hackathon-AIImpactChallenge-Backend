@@ -441,6 +441,7 @@ class PMAgentService:
         project_id: str,
         action_type: str | None = None,
         limit: int = 50,
+        offset: int = 0,
     ) -> PmLogListResponse:
         await self._require_project(project_id)
         if not self._log_store:
@@ -450,6 +451,7 @@ class PMAgentService:
             project_id=project_id,
             action_type=action_type,
             limit=limit,
+            offset=offset,
         )
         return PmLogListResponse(
             logs=[
