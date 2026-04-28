@@ -128,6 +128,7 @@ class ResolveEventRequest(BaseModel):
 
 
 class MessageSendRequest(BaseModel):
+    project_id: str
     conversation_id: str
     sender_type: str = "freelancer"
     sender_id: str

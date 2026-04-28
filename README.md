@@ -43,6 +43,7 @@ The backend works locally without Azure. To enable AI features:
    - `AZURE_FOUNDRY_API_KEY` - Your API key
    - `AZURE_FOUNDRY_CHAT_DEPLOYMENT` - Chat model deployment name
    - `AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT` - Embedding model name
+   - `USE_MICROSOFT_AGENT_FRAMEWORK` - Set to `true` to use Agent Framework runtime (falls back to local if not installed)
 
 2. **Azure AI Search** - For vector search:
    - `AZURE_AI_SEARCH_ENDPOINT` - e.g., `https://your-search-service.search.windows.net`

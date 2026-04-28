@@ -595,6 +595,7 @@ Saves a message in a conversation.
 ### Payload
 ```json
 {
+  "project_id": "proj-demo",
   "conversation_id": "uuid",
   "sender_type": "freelancer",
   "sender_id": "user-dina",

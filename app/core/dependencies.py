@@ -29,7 +29,10 @@ def _build_runtime(settings: Settings):
         and settings.azure_foundry_endpoint
         and settings.azure_foundry_chat_deployment
     ):
-        return MicrosoftAgentRuntime(settings)
+        try:
+            return MicrosoftAgentRuntime(settings)
+        except RuntimeError:
+            return LocalTemplateRuntime()
     return LocalTemplateRuntime()
 
 
