@@ -153,6 +153,7 @@ class ConversationResponse(BaseModel):
 
 
 class ChatHistoryRequest(BaseModel):
+    project_id: str
     conversation_id: str
     limit: int = 50
     before_message_id: str | None = None
