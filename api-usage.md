@@ -24,10 +24,10 @@ The app reads settings from `.env` or environment variables.
 | `API_V1_PREFIX` | API prefix, default `/api/v1` |
 | `CONTEXT_BANK_DIR` | Local JSON storage for project memory |
 | `USE_MICROSOFT_AGENT_FRAMEWORK` | Enables Azure runtime when configured |
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI resource endpoint |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key |
-| `AZURE_OPENAI_CHAT_DEPLOYMENT` | Chat deployment name |
-| `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` | Embedding deployment name |
+| `AZURE_FOUNDRY_ENDPOINT` | Azure AI Foundry resource endpoint |
+| `AZURE_FOUNDRY_API_KEY` | Azure AI Foundry API key |
+| `AZURE_FOUNDRY_CHAT_DEPLOYMENT` | Chat deployment name |
+| `AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT` | Embedding deployment name |
 | `AZURE_AI_SEARCH_ENDPOINT` | Azure AI Search endpoint |
 | `AZURE_AI_SEARCH_API_KEY` | Azure AI Search key |
 | `AZURE_AI_SEARCH_INDEX_NAME` | Search index name |

@@ -114,7 +114,7 @@ GET    /api/v1/talent/matches/{match_id}            # Get match details
 ```
 Project Requirements
        ↓
-Embedding Service (Azure OpenAI)
+Embedding Service (Azure AI Foundry)
        ↓
 Project Embedding Vector
        ↓
@@ -228,7 +228,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/talent/match \
 
 ### Profile Embeddings
 - Text representation: Name + Headline + Bio + Skills + Experiences
-- Vector dimension: 1536 (Azure OpenAI default)
+- Vector dimension: 1536 (Azure AI Foundry default)
 - Stored in profile JSON for offline matching
 - Can be synced to Azure AI Search for scale
 
@@ -298,7 +298,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/talent/match \
 
 ## Technical Notes
 
-1. **Embeddings:** Azure OpenAI text-embedding-ada-002 (1536 dimensions)
+1. **Embeddings:** Azure AI Foundry text-embedding-ada-002 (1536 dimensions)
 2. **Storage:** JSON files for profiles (can scale to PostgreSQL + Azure AI Search)
 3. **Matching:** In-memory cosine similarity (can scale to vector database)
 4. **Version:** API bumped to 0.3.0 with all 3 agents

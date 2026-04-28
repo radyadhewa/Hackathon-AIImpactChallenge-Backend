@@ -22,7 +22,7 @@
 **A:** PM Agent (Recommended) — the core differentiator.
 
 ### Q: AI model/provider?
-**A:** Azure OpenAI.
+**A:** Azure AI Foundry.
 
 ### Q: Agent orchestration?
 **A:** Microsoft Agent SDK (direct requirement — NOT LangChain/LangGraph/CrewAI).
@@ -36,7 +36,7 @@
 ### Q1: Which Vector DB?
 **A:** Azure AI Search.
 
-### Q2: Azure OpenAI Deployment Details?
+### Q2: Azure AI Foundry Deployment Details?
 **A:** Set endpoint resource template first. Deploy GPT-4.1 later (user will do manually).
 
 ### Q3: Context Bank Communication Pattern?
@@ -68,7 +68,7 @@
 | Decision | Value |
 |----------|-------|
 | Backend | FastAPI (existing) + AI layer |
-| AI Provider | Azure OpenAI (endpoint template now, GPT-4.1 later) |
+| AI Provider | Azure AI Foundry (endpoint template now, GPT-4.1 later) |
 | Orchestration | Microsoft Agent SDK |
 | Memory/Vector DB | Azure AI Search |
 | Communication | Shared tool-based context |
@@ -85,7 +85,7 @@
 
 ## Latest User Decisions
 - Vector DB: Azure AI Search
-- Azure OpenAI: create endpoint resource template first; actual GPT-4.1 deployment later
+- Azure AI Foundry: create endpoint resource template first; actual GPT-4.1 deployment later
 - Inter-agent communication: shared tool-based context
 
 ## Exploration Recovery

@@ -38,11 +38,11 @@ Server runs at `http://127.0.0.1:8000`
 
 The backend works locally without Azure. To enable AI features:
 
-1. **Azure OpenAI** - Create resource and deployment:
-   - `AZURE_OPENAI_ENDPOINT` - e.g., `https://your-resource.openai.azure.com/`
-   - `AZURE_OPENAI_API_KEY` - Your API key
-   - `AZURE_OPENAI_CHAT_DEPLOYMENT` - Chat model deployment name
-   - `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` - Embedding model name
+1. **Azure AI Foundry** - Create a Foundry resource and deployments:
+   - `AZURE_FOUNDRY_ENDPOINT` - e.g., `https://your-resource.services.ai.azure.com`
+   - `AZURE_FOUNDRY_API_KEY` - Your API key
+   - `AZURE_FOUNDRY_CHAT_DEPLOYMENT` - Chat model deployment name
+   - `AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT` - Embedding model name
 
 2. **Azure AI Search** - For vector search:
    - `AZURE_AI_SEARCH_ENDPOINT` - e.g., `https://your-search-service.search.windows.net`
@@ -133,7 +133,7 @@ All agents write to a shared **Context Bank** - local JSON storage backed by Azu
 When Secretary or Talent agents create action items, they write **AgentEvent** records to the Context Bank. The PM Agent reads these events and responds.
 
 ### Embeddings
-Freelancer profiles and project descriptions are embedded for semantic matching using Azure OpenAI embeddings.
+Freelancer profiles and project descriptions are embedded for semantic matching using Azure AI Foundry embeddings.
 
 ## Documentation
 
@@ -150,6 +150,6 @@ pytest tests/ -v
 
 - **FastAPI** - Web framework
 - **Pydantic v2** - Data validation
-- **Azure OpenAI** - LLM embeddings and chat
+- **Azure AI Foundry** - LLM embeddings and chat
 - **Azure AI Search** - Vector similarity search
 - **Python 3.11+** - Runtime

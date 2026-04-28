@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     context_bank_dir: Path = Path("data/context_bank")
     use_microsoft_agent_framework: bool = True
 
-    azure_openai_endpoint: str | None = None
-    azure_openai_api_key: SecretStr | None = None
-    azure_openai_chat_deployment: str | None = None
-    azure_openai_embedding_deployment: str | None = None
-    azure_openai_api_version: str | None = None
+    azure_foundry_endpoint: str | None = None
+    azure_foundry_api_key: SecretStr | None = None
+    azure_foundry_chat_deployment: str | None = None
+    azure_foundry_embedding_deployment: str | None = None
+    azure_foundry_api_version: str | None = None
     azure_use_default_credential: bool = False
 
     azure_ai_search_endpoint: str | None = None
@@ -32,10 +32,10 @@ class Settings(BaseSettings):
     )
 
     @property
-    def azure_openai_api_key_value(self) -> str | None:
-        if self.azure_openai_api_key is None:
+    def azure_foundry_api_key_value(self) -> str | None:
+        if self.azure_foundry_api_key is None:
             return None
-        return self.azure_openai_api_key.get_secret_value()
+        return self.azure_foundry_api_key.get_secret_value()
 
     @property
     def azure_ai_search_api_key_value(self) -> str | None:
@@ -47,4 +47,3 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
-

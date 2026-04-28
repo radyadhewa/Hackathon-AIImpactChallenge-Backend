@@ -25,8 +25,8 @@ def _build_context_bank(settings: Settings) -> ContextBankService:
 def _build_runtime(settings: Settings):
     if (
         settings.use_microsoft_agent_framework
-        and settings.azure_openai_endpoint
-        and settings.azure_openai_chat_deployment
+        and settings.azure_foundry_endpoint
+        and settings.azure_foundry_chat_deployment
     ):
         return MicrosoftAgentRuntime(settings)
     return LocalTemplateRuntime()
@@ -66,4 +66,3 @@ def build_talent_service(settings: Settings) -> TalentAgentService:
         profile_service=profile_service,
         context_bank=context_bank,
     )
-

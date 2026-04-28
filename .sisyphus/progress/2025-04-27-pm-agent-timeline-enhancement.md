@@ -226,7 +226,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/pm/projects/proj-demo/events/{event_id
 
 1. **Concurrency:** Timeline calculations are synchronous - may need async optimization for large projects
 2. **Storage:** Currently JSON files + Azure AI Search. Consider PostgreSQL for relational data if project scales
-3. **Testing:** Unit tests added, but integration tests with real Azure OpenAI needed
+3. **Testing:** Unit tests added, but integration tests with real Azure AI Foundry needed
 4. **Authentication:** No auth layer yet - add JWT/API key auth before production
 
 ---

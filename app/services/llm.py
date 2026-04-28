@@ -47,18 +47,18 @@ class MicrosoftAgentRuntime(BaseRuntime):
             )
 
         client_kwargs: dict[str, object] = {
-            "endpoint": self._settings.azure_openai_endpoint,
-            "deployment_name": self._settings.azure_openai_chat_deployment,
+            "endpoint": self._settings.azure_foundry_endpoint,
+            "deployment_name": self._settings.azure_foundry_chat_deployment,
         }
-        if self._settings.azure_openai_api_version:
-            client_kwargs["api_version"] = self._settings.azure_openai_api_version
-        if self._settings.azure_openai_api_key_value:
-            client_kwargs["api_key"] = self._settings.azure_openai_api_key_value
+        if self._settings.azure_foundry_api_version:
+            client_kwargs["api_version"] = self._settings.azure_foundry_api_version
+        if self._settings.azure_foundry_api_key_value:
+            client_kwargs["api_key"] = self._settings.azure_foundry_api_key_value
         elif self._settings.azure_use_default_credential and DefaultAzureCredential:
             client_kwargs["credential"] = DefaultAzureCredential()
         else:
             raise RuntimeError(
-                "Azure runtime requires either AZURE_OPENAI_API_KEY or AZURE_USE_DEFAULT_CREDENTIAL=true."
+                "Azure runtime requires either AZURE_FOUNDRY_API_KEY or AZURE_USE_DEFAULT_CREDENTIAL=true."
             )
 
         client = AzureOpenAIChatClient(**client_kwargs)
@@ -203,19 +203,18 @@ class EmbeddingService:
     async def embed_text(self, text: str) -> list[float] | None:
         if (
             AsyncOpenAI is None
-            or not self._settings.azure_openai_endpoint
-            or not self._settings.azure_openai_embedding_deployment
-            or not self._settings.azure_openai_api_key_value
+            or not self._settings.azure_foundry_endpoint
+            or not self._settings.azure_foundry_embedding_deployment
+            or not self._settings.azure_foundry_api_key_value
         ):
             return None
 
         client = AsyncOpenAI(
-            api_key=self._settings.azure_openai_api_key_value,
-            base_url=f"{self._settings.azure_openai_endpoint.rstrip('/')}/openai/v1/",
+            api_key=self._settings.azure_foundry_api_key_value,
+            base_url=f"{self._settings.azure_foundry_endpoint.rstrip('/')}/openai/v1/",
         )
         response = await client.embeddings.create(
-            model=self._settings.azure_openai_embedding_deployment,
+            model=self._settings.azure_foundry_embedding_deployment,
             input=text,
         )
         return response.data[0].embedding
-
