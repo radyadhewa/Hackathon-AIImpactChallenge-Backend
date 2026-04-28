@@ -33,6 +33,7 @@ async def health(service: PMAgentService = Depends(get_pm_service)) -> HealthRes
         status="ok",
         runtime=service.runtime_name,
         context_bank=service.context_bank_name,
+        log_store=service.log_store_name,
     )
 
 
@@ -128,4 +129,3 @@ async def resolve_event(
     service: PMAgentService = Depends(get_pm_service),
 ) -> dict:
     return await service.resolve_event(project_id, event_id, payload)
-

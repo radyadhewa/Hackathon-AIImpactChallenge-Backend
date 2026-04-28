@@ -49,6 +49,12 @@ The backend works locally without Azure. To enable AI features:
    - `AZURE_AI_SEARCH_API_KEY` - Your search API key
    - `AZURE_AI_SEARCH_INDEX_NAME` - Index name (default: `keroyok-context-bank`)
 
+3. **Azure Cosmos DB (PM logs)** - Persist PM agent actions for audit and follow-up:
+   - `COSMOS_ENDPOINT`
+   - `COSMOS_KEY`
+   - `COSMOS_DATABASE`
+   - `COSMOS_PM_LOG_CONTAINER` (default: `pm-agent-logs`)
+
 If Azure settings are incomplete, the app falls back to a deterministic local runtime.
 
 ## Codebase Architecture

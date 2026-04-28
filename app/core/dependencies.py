@@ -8,6 +8,7 @@ from app.services.azure_search import AzureSearchContextBankIndex
 from app.services.chat_service import ChatService
 from app.services.context_bank import ContextBankService
 from app.services.llm import EmbeddingService, LocalTemplateRuntime, MicrosoftAgentRuntime
+from app.services.pm_log_store import PmLogStore
 from app.services.profile_service import ProfileService
 from app.services.timeline_service import TimelineService
 
@@ -36,8 +37,14 @@ def build_pm_service(settings: Settings) -> PMAgentService:
     context_bank = _build_context_bank(settings)
     timeline_service = TimelineService(context_bank)
     runtime = _build_runtime(settings)
+    log_store = PmLogStore(settings)
 
-    return PMAgentService(runtime=runtime, context_bank=context_bank, timeline_service=timeline_service)
+    return PMAgentService(
+        runtime=runtime,
+        context_bank=context_bank,
+        timeline_service=timeline_service,
+        log_store=log_store,
+    )
 
 
 def build_secretary_service(settings: Settings) -> SecretaryAgentService:

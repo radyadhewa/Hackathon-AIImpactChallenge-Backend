@@ -32,6 +32,10 @@ The app reads settings from `.env` or environment variables.
 | `AZURE_AI_SEARCH_API_KEY` | Azure AI Search key |
 | `AZURE_AI_SEARCH_INDEX_NAME` | Search index name |
 | `AZURE_AI_SEARCH_VECTOR_DIMENSIONS` | Vector size, default `1536` |
+| `COSMOS_ENDPOINT` | Azure Cosmos DB endpoint |
+| `COSMOS_KEY` | Azure Cosmos DB key |
+| `COSMOS_DATABASE` | Cosmos DB database name |
+| `COSMOS_PM_LOG_CONTAINER` | Cosmos DB container name for PM logs |
 
 ---
 

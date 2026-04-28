@@ -113,6 +113,10 @@ def test_pm_agent_endpoints(tmp_path: Path) -> None:
     assert bootstrap_response.status_code == 200
     assert bootstrap_response.json()["snapshot"]["overview"]["project_id"] == "proj-1"
 
+    health_response = client.get("/api/v1/pm/health")
+    assert health_response.status_code == 200
+    assert "log_store" in health_response.json()
+
     update_response = client.post(
         "/api/v1/pm/projects/proj-1/updates",
         json={

@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     azure_foundry_api_version: str | None = None
     azure_use_default_credential: bool = False
 
+    cosmos_endpoint: str | None = None
+    cosmos_key: SecretStr | None = None
+    cosmos_database: str | None = None
+    cosmos_pm_log_container: str = "pm-agent-logs"
+
     azure_ai_search_endpoint: str | None = None
     azure_ai_search_api_key: SecretStr | None = None
     azure_ai_search_index_name: str = "keroyok-context-bank"
@@ -42,6 +47,12 @@ class Settings(BaseSettings):
         if self.azure_ai_search_api_key is None:
             return None
         return self.azure_ai_search_api_key.get_secret_value()
+
+    @property
+    def cosmos_key_value(self) -> str | None:
+        if self.cosmos_key is None:
+            return None
+        return self.cosmos_key.get_secret_value()
 
 
 @lru_cache(maxsize=1)

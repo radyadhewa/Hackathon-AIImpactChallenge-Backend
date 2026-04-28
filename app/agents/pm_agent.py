@@ -40,6 +40,7 @@ from app.models.domain import (
 )
 from app.services.context_bank import ContextBankService
 from app.services.llm import BaseRuntime
+from app.services.pm_log_store import PmLogStore
 from app.services.timeline_service import TimelineService
 
 JSON_OBJECT_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
@@ -51,10 +52,12 @@ class PMAgentService:
         runtime: BaseRuntime,
         context_bank: ContextBankService,
         timeline_service: TimelineService | None = None,
+        log_store: PmLogStore | None = None,
     ) -> None:
         self._runtime = runtime
         self._context_bank = context_bank
         self._timeline_service = timeline_service or TimelineService(context_bank)
+        self._log_store = log_store
 
     @property
     def runtime_name(self) -> str:
@@ -63,6 +66,12 @@ class PMAgentService:
     @property
     def context_bank_name(self) -> str:
         return self._context_bank.name
+
+    @property
+    def log_store_name(self) -> str:
+        if not self._log_store:
+            return "disabled"
+        return self._log_store.name
 
     async def bootstrap_project(
         self,
@@ -127,6 +136,17 @@ class PMAgentService:
             metadata={"delivery_goal": payload.delivery_goal},
             source="task_breakdown_subagent",
         )
+        if self._log_store:
+            await self._log_store.log_action(
+                project_id=payload.project_id,
+                action_type="task_breakdown",
+                summary=result.summary,
+                payload={
+                    "delivery_goal": payload.delivery_goal,
+                    "tasks": [task.model_dump(mode="json") for task in result.tasks],
+                },
+                actor="task_breakdown_subagent",
+            )
         return TaskBreakdownResponse(result=result, context_record=record)
 
     async def check_work(self, payload: WorkCheckRequest) -> WorkCheckResponse:
@@ -164,6 +184,25 @@ class PMAgentService:
             metadata={"task_id": payload.task_id, "freelancer_name": payload.freelancer_name},
             source="work_checker_subagent",
         )
+        if self._log_store:
+            await self._log_store.log_action(
+                project_id=payload.project_id,
+                action_type="work_check",
+                summary=result.summary,
+                payload={
+                    "task_id": payload.task_id,
+                    "task_title": payload.task_title,
+                    "verdict": result.verdict,
+                    "scope_alignment_score": result.scope_alignment_score,
+                    "strengths": result.strengths,
+                    "gaps": result.gaps,
+                    "improvement_actions": result.improvement_actions,
+                    "reference_suggestions": result.reference_suggestions,
+                    "needs_escalation": result.needs_escalation,
+                    "escalation_message": result.escalation_message,
+                },
+                actor="work_checker_subagent",
+            )
         return WorkCheckResponse(result=result, context_record=record)
 
     async def generate_report(self, payload: ReportRequest) -> ReportResponse:
@@ -193,6 +232,24 @@ class PMAgentService:
             metadata={"cadence": payload.cadence},
             source="reporter_subagent",
         )
+        if self._log_store:
+            await self._log_store.log_action(
+                project_id=payload.project_id,
+                action_type="report",
+                summary=result.summary,
+                payload={
+                    "cadence": payload.cadence,
+                    "progress_percent": result.progress_percent,
+                    "overall_status": result.overall_status,
+                    "wins": result.wins,
+                    "blockers": result.blockers,
+                    "upcoming_actions": result.upcoming_actions,
+                    "risks": result.risks,
+                    "escalations": result.escalations,
+                    "morale_coaching": result.morale_coaching,
+                },
+                actor="reporter_subagent",
+            )
 
         if result.escalations:
             for escalation in result.escalations:
@@ -287,6 +344,14 @@ class PMAgentService:
             metadata={"entries_count": len(timeline.entries)},
             source="timeline_service",
         )
+        if self._log_store:
+            await self._log_store.log_action(
+                project_id=payload.project_id,
+                action_type="timeline_generated",
+                summary=f"Generated {len(timeline.entries)} timeline entries.",
+                payload=timeline.model_dump(mode="json"),
+                actor="timeline_service",
+            )
 
         return TimelineResponse(timeline=timeline, context_record=record)
 
@@ -329,6 +394,20 @@ class PMAgentService:
             metadata={"task_id": task_id, "status": payload.status},
             source="pm_agent",
         )
+
+        if self._log_store:
+            await self._log_store.log_action(
+                project_id=project_id,
+                action_type="task_status_update",
+                summary=f"Task {task_id} marked {payload.status}.",
+                payload={
+                    "task_id": task_id,
+                    "status": payload.status,
+                    "actual_hours": payload.actual_hours,
+                    "notes": payload.notes,
+                },
+                actor="pm_agent",
+            )
 
         if payload.status == "completed":
             await self._context_bank.add_agent_event(
@@ -383,4 +462,3 @@ class PMAgentService:
             status_code=502,
             detail="Agent runtime did not return valid JSON.",
         )
-

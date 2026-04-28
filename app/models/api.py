@@ -25,6 +25,7 @@ class HealthResponse(BaseModel):
     status: str
     runtime: str
     context_bank: str
+    log_store: str | None = None
 
 
 class ProjectBootstrapRequest(BaseModel):
@@ -269,4 +270,3 @@ class MatchResultResponse(BaseModel):
     match_score: float
     match_reasoning: str
     skill_match_percentage: float
-
