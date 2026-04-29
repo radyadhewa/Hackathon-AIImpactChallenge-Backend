@@ -240,9 +240,8 @@ def test_meeting_workflow(tmp_path: Path) -> None:
     """
 
     complete_response = client.post(
-        f"/api/v1/secretary/meetings/{meeting_id}/complete",
+        f"/api/v1/secretary/projects/proj-meeting/meetings/{meeting_id}/complete",
         json={
-            "project_id": "proj-meeting",
             "transcript": transcript,
             "absentees": [],
         },

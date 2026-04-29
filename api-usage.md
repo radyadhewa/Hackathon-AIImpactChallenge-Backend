@@ -770,7 +770,7 @@ Lists meetings. `status` is optional.
 
 ## 2.8 Complete Meeting and Generate MoM
 
-### `POST /api/v1/secretary/meetings/{meeting_id}/complete`
+### `POST /api/v1/secretary/projects/{project_id}/meetings/{meeting_id}/complete`
 Stores transcript, marks the meeting complete, and generates minutes of meeting.
 
 **Request model:** `MeetingCompleteRequest`
@@ -778,7 +778,6 @@ Stores transcript, marks the meeting complete, and generates minutes of meeting.
 ### Payload
 ```json
 {
-  "project_id": "proj-demo",
   "transcript": "Dina: Welcome everyone...",
   "absentees": []
 }
@@ -1520,7 +1519,7 @@ context_bank/
 
 ## Flow C: Meeting turns into MoM and tasks
 1. `POST /api/v1/secretary/meetings`
-2. `POST /api/v1/secretary/meetings/{meeting_id}/complete`
+2. `POST /api/v1/secretary/projects/{project_id}/meetings/{meeting_id}/complete`
 3. MoM creates action items
 4. PM resolves events into project tasks
 
@@ -1559,7 +1558,7 @@ For frontend or external clients:
 | Area | Key Endpoints |
 |---|---|
 | PM | `/pm/health`, `/pm/projects/bootstrap`, `/pm/task-breakdown`, `/pm/work-check`, `/pm/reports`, `/pm/timeline/generate`, `/pm/projects/{id}/events` |
-| Secretary | `/secretary/conversations`, `/secretary/messages`, `/secretary/chat/summarize`, `/secretary/meetings`, `/secretary/meetings/{id}/complete`, `/secretary/suggest` |
+| Secretary | `/secretary/conversations`, `/secretary/messages`, `/secretary/chat/summarize`, `/secretary/meetings`, `/secretary/projects/{project_id}/meetings/{meeting_id}/complete`, `/secretary/suggest` |
 | Talent | `/talent/signup/cv`, `/talent/profiles/{id}/generate`, `/talent/profiles/search`, `/talent/match`, `/talent/matches/{match_id}` |
 
 ---

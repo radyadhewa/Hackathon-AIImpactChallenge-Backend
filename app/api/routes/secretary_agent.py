@@ -83,7 +83,7 @@ async def list_meetings(
     return await service.list_meetings(project_id, status)
 
 
-@router.post("/meetings/{meeting_id}/complete", response_model=MeetingCompleteResponse)
+@router.post("/projects/{project_id}/meetings/{meeting_id}/complete", response_model=MeetingCompleteResponse)
 async def complete_meeting(
     project_id: str,
     meeting_id: str,

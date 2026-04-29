@@ -194,6 +194,89 @@ class LocalTemplateRuntime(BaseRuntime):
                 }
             )
 
+        if agent_name == "chat_summarizer":
+            messages = data.get("messages") or []
+            summary = "Conversation discussed project progress and next steps."
+            key_points = []
+            decisions_made = []
+            action_items = []
+            blockers = []
+            sentiment = "neutral"
+
+            for message in messages[:5]:
+                content = str(message.get("content", "")).strip()
+                if content:
+                    key_points.append(content[:120])
+                    if any(word in content.lower() for word in ["decide", "agreed", "will", "need", "should"]):
+                        action_items.append(
+                            {
+                                "content": content[:140],
+                                "assignee": message.get("sender"),
+                                "due_date": None,
+                                "priority": "medium",
+                            }
+                        )
+
+            if not key_points:
+                key_points = ["No substantive messages found in the thread."]
+
+            return json.dumps(
+                {
+                    "summary": summary,
+                    "key_points": key_points[:5],
+                    "decisions_made": decisions_made,
+                    "action_items": action_items[:3],
+                    "blockers": blockers,
+                    "sentiment": sentiment,
+                }
+            )
+
+        if agent_name == "mom_generator":
+            transcript = data.get("transcript", "")
+            participants = data.get("participants") or []
+            agenda = ["Meeting kickoff", "Scope review", "Next steps"]
+            key_discussions = []
+            if transcript:
+                key_discussions.append(transcript.strip()[:200])
+
+            action_items = []
+            if participants:
+                action_items.append(
+                    {
+                        "content": "Review meeting notes and confirm next steps.",
+                        "assignee": participants[0],
+                        "due_date": None,
+                        "priority": "medium",
+                    }
+                )
+
+            return json.dumps(
+                {
+                    "agenda": agenda,
+                    "key_discussions": key_discussions or ["Meeting covered planning and delivery coordination."],
+                    "decisions_made": ["Proceed with the agreed project plan."],
+                    "action_items": action_items,
+                    "next_meeting": {
+                        "suggested_date": None,
+                        "agenda_preview": ["Review progress", "Confirm blockers"],
+                    },
+                }
+            )
+
+        if agent_name == "chatbot_assistant":
+            current_message = data.get("current_message", "")
+            return json.dumps(
+                {
+                    "suggestions": [
+                        f"Thanks for the update — {current_message[:60]}".strip(),
+                        "Understood, I’ll follow up shortly.",
+                        "Noted. I’ll keep you posted.",
+                    ],
+                    "reasoning": "Local fallback keeps the tone professional and concise.",
+                    "tone_analysis": "Professional, collaborative, and brief.",
+                }
+            )
+
         raise ValueError(f"Unsupported local runtime agent: {agent_name}")
 
 

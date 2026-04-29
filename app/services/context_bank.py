@@ -196,7 +196,7 @@ class ContextBankService:
     def _event_file(self, project_id: str, event_id: str) -> Path:
         return self._records_dir(project_id) / f"event_{event_id}.json"
 
-    async def add_agent_event(self, project_id: str, event: AgentEvent) -> None:
+    async def add_agent_event(self, project_id: str, event: AgentEvent) -> AgentEvent:
         event_file = self._event_file(project_id, event.event_id)
 
         def _write() -> None:
@@ -223,6 +223,7 @@ class ContextBankService:
             ),
             embedding,
         )
+        return event
 
     async def get_agent_events(
         self,
