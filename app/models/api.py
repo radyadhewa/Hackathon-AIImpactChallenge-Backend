@@ -201,6 +201,7 @@ class MeetingCompleteResponse(BaseModel):
 
 
 class SecretarySuggestRequest(BaseModel):
+    project_id: str
     conversation_id: str
     current_message: str
     context_messages: int = 10
