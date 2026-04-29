@@ -1,0 +1,13 @@
+.git/
+.github/
+.sisyphus/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+local.settings.json
+local.settings.example.json
+data/context_bank/
+tests/
+keroyok_ai_backend.egg-info/

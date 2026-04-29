@@ -35,6 +35,7 @@ The app reads settings from `.env` or environment variables.
 | `COSMOS_ENDPOINT` | Azure Cosmos DB endpoint |
 | `COSMOS_KEY` | Azure Cosmos DB key |
 | `COSMOS_DATABASE` | Cosmos DB database name |
+| `COSMOS_CONTEXT_CONTAINER` | Cosmos DB container name for the context bank |
 | `COSMOS_PM_LOG_CONTAINER` | Cosmos DB container name for PM logs |
 
 ---

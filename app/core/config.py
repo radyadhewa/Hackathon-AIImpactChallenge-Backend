@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     cosmos_endpoint: str | None = None
     cosmos_key: SecretStr | None = None
     cosmos_database: str | None = None
+    cosmos_context_container: str = "context-bank"
     cosmos_pm_log_container: str = "pm-agent-logs"
 
     azure_ai_search_endpoint: str | None = None

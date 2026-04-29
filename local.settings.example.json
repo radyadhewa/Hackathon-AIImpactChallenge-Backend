@@ -1,0 +1,27 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+    "APP_ENV": "local",
+    "API_V1_PREFIX": "/api/v1",
+    "CONTEXT_BANK_DIR": "data/context_bank",
+    "USE_MICROSOFT_AGENT_FRAMEWORK": "false",
+    "AZURE_FOUNDRY_ENDPOINT": "",
+    "AZURE_FOUNDRY_API_KEY": "",
+    "AZURE_FOUNDRY_CHAT_DEPLOYMENT": "",
+    "AZURE_FOUNDRY_EMBEDDING_DEPLOYMENT": "",
+    "AZURE_FOUNDRY_API_VERSION": "",
+    "AZURE_USE_DEFAULT_CREDENTIAL": "false",
+    "AZURE_AI_SEARCH_ENDPOINT": "",
+    "AZURE_AI_SEARCH_API_KEY": "",
+    "AZURE_AI_SEARCH_INDEX_NAME": "keroyok-context-bank",
+    "AZURE_AI_SEARCH_VECTOR_DIMENSIONS": "1536",
+    "COSMOS_ENDPOINT": "",
+    "COSMOS_KEY": "",
+    "COSMOS_DATABASE": "keroyok-ai",
+    "COSMOS_CONTEXT_CONTAINER": "context-bank",
+    "COSMOS_PM_LOG_CONTAINER": "pm-agent-logs"
+  }
+}

@@ -20,6 +20,7 @@ def _build_context_bank(settings: Settings) -> ContextBankService:
         root_dir=settings.context_bank_dir,
         embedding_service=embedding_service,
         search_index=search_index,
+        settings=settings,
     )
 
 

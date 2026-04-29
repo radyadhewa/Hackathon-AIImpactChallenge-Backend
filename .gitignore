@@ -1,6 +1,8 @@
 .env
+local.settings.json
 .venv/
 __pycache__/
 .pytest_cache/
 *.pyc
 data/context_bank/
+.python_packages/

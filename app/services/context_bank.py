@@ -5,7 +5,9 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
+from app.core.config import Settings
 from app.models.domain import (
     AgentEvent,
     ContextBankRecord,
@@ -16,6 +18,11 @@ from app.models.domain import (
 from app.services.azure_search import AzureSearchContextBankIndex
 from app.services.llm import EmbeddingService
 
+try:
+    from azure.cosmos import CosmosClient
+except ImportError:  # pragma: no cover
+    CosmosClient = None
+
 
 class ContextBankService:
     def __init__(
@@ -23,14 +30,99 @@ class ContextBankService:
         root_dir: Path,
         embedding_service: EmbeddingService,
         search_index: AzureSearchContextBankIndex,
+        settings: Settings | None = None,
     ) -> None:
         self._root_dir = Path(root_dir)
         self._embedding_service = embedding_service
         self._search_index = search_index
+        self._settings = settings
+        self._initialized = False
 
     @property
     def name(self) -> str:
-        return self._search_index.name
+        return "cosmos-db" if self._use_cosmos else self._search_index.name
+
+    @property
+    def _use_cosmos(self) -> bool:
+        return bool(
+            CosmosClient
+            and self._settings
+            and self._settings.cosmos_endpoint
+            and self._settings.cosmos_key_value
+            and self._settings.cosmos_database
+            and self._settings.cosmos_context_container
+        )
+
+    def _client(self):
+        if not self._use_cosmos or CosmosClient is None or self._settings is None:
+            return None
+        return CosmosClient(self._settings.cosmos_endpoint, credential=self._settings.cosmos_key_value)
+
+    async def _ensure_container(self) -> None:
+        if not self._use_cosmos or self._initialized or self._settings is None:
+            return
+
+        client = self._client()
+        if client is None:
+            return
+
+        def _init() -> None:
+            database = client.create_database_if_not_exists(self._settings.cosmos_database)
+            database.create_container_if_not_exists(
+                id=self._settings.cosmos_context_container,
+                partition_key="/project_id",
+            )
+
+        await asyncio.to_thread(_init)
+        self._initialized = True
+
+    async def _upsert_document(self, document: dict[str, Any]) -> None:
+        if not self._use_cosmos or self._settings is None:
+            return
+
+        await self._ensure_container()
+        client = self._client()
+        if client is None:
+            return
+
+        def _write() -> None:
+            database = client.get_database_client(self._settings.cosmos_database)
+            container = database.get_container_client(self._settings.cosmos_context_container)
+            container.upsert_item(document)
+
+        await asyncio.to_thread(_write)
+
+    async def _query_documents(
+        self,
+        *,
+        project_id: str,
+        item_type: str | None = None,
+    ) -> list[dict[str, Any]]:
+        if not self._use_cosmos or self._settings is None:
+            return []
+
+        await self._ensure_container()
+        client = self._client()
+        if client is None:
+            return []
+
+        query = "SELECT * FROM c WHERE c.project_id = @project_id"
+        parameters: list[dict[str, Any]] = [{"name": "@project_id", "value": project_id}]
+        if item_type is not None:
+            query += " AND c.item_type = @item_type"
+            parameters.append({"name": "@item_type", "value": item_type})
+
+        def _read() -> list[dict[str, Any]]:
+            database = client.get_database_client(self._settings.cosmos_database)
+            container = database.get_container_client(self._settings.cosmos_context_container)
+            items = container.query_items(
+                query=query,
+                parameters=parameters,
+                enable_cross_partition_query=True,
+            )
+            return list(items)
+
+        return await asyncio.to_thread(_read)
 
     def _project_dir(self, project_id: str) -> Path:
         return self._root_dir / project_id
@@ -42,6 +134,17 @@ class ContextBankService:
         return self._project_dir(project_id) / "records"
 
     async def bootstrap_project(self, overview: ProjectOverview) -> ProjectContextSnapshot:
+        if self._use_cosmos:
+            document = {
+                "id": f"project_overview:{overview.project_id}",
+                "project_id": overview.project_id,
+                "item_type": "project_overview",
+                **overview.model_dump(mode="json"),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+            await self._upsert_document(document)
+            return await self.get_snapshot(overview.project_id)
+
         project_dir = self._project_dir(overview.project_id)
         records_dir = self._records_dir(overview.project_id)
         project_file = self._project_file(overview.project_id)
@@ -77,19 +180,29 @@ class ContextBankService:
             source=source,
             created_at=datetime.now(timezone.utc),
         )
-        record_path = self._records_dir(project_id) / f"{record.id}.json"
 
-        def _write() -> None:
-            record_path.parent.mkdir(parents=True, exist_ok=True)
-            record_path.write_text(
-                json.dumps(record.model_dump(mode="json"), indent=2),
-                encoding="utf-8",
+        if self._use_cosmos:
+            await self._upsert_document(
+                {
+                    "id": record.id,
+                    "project_id": project_id,
+                    "item_type": "context_record",
+                    **record.model_dump(mode="json"),
+                }
             )
+        else:
+            record_path = self._records_dir(project_id) / f"{record.id}.json"
 
-        await asyncio.to_thread(_write)
-        embedding = await self._embedding_service.embed_text(
-            f"{record.title}\n{record.content}"
-        )
+            def _write() -> None:
+                record_path.parent.mkdir(parents=True, exist_ok=True)
+                record_path.write_text(
+                    json.dumps(record.model_dump(mode="json"), indent=2),
+                    encoding="utf-8",
+                )
+
+            await asyncio.to_thread(_write)
+
+        embedding = await self._embedding_service.embed_text(f"{record.title}\n{record.content}")
         await self._search_index.upsert(record, embedding)
         return record
 
@@ -103,6 +216,12 @@ class ContextBankService:
         )
 
     async def get_project_overview(self, project_id: str) -> ProjectOverview | None:
+        if self._use_cosmos:
+            items = await self._query_documents(project_id=project_id, item_type="project_overview")
+            if not items:
+                return None
+            return ProjectOverview.model_validate(items[0])
+
         project_file = self._project_file(project_id)
         if not project_file.exists():
             return None
@@ -117,6 +236,12 @@ class ContextBankService:
         project_id: str,
         limit: int = 10,
     ) -> list[ContextBankRecord]:
+        if self._use_cosmos:
+            items = await self._query_documents(project_id=project_id, item_type="context_record")
+            records = [ContextBankRecord.model_validate(item) for item in items]
+            records.sort(key=lambda item: item.created_at, reverse=True)
+            return records[:limit]
+
         records_dir = self._records_dir(project_id)
         if not records_dir.exists():
             return []
@@ -168,6 +293,17 @@ class ContextBankService:
         return self._records_dir(project_id) / f"timeline_{entry_id}.json"
 
     async def add_timeline_entry(self, project_id: str, entry: TimelineEntry) -> None:
+        if self._use_cosmos:
+            await self._upsert_document(
+                {
+                    "id": entry.entry_id,
+                    "project_id": project_id,
+                    "item_type": "timeline_entry",
+                    **entry.model_dump(mode="json"),
+                }
+            )
+            return
+
         timeline_file = self._timeline_file(project_id, entry.entry_id)
 
         def _write() -> None:
@@ -180,6 +316,12 @@ class ContextBankService:
         await asyncio.to_thread(_write)
 
     async def get_timeline_entries(self, project_id: str) -> list[TimelineEntry]:
+        if self._use_cosmos:
+            items = await self._query_documents(project_id=project_id, item_type="timeline_entry")
+            entries = [TimelineEntry.model_validate(item) for item in items]
+            entries.sort(key=lambda item: (item.start_date or datetime.max.replace(tzinfo=timezone.utc)))
+            return entries
+
         records_dir = self._records_dir(project_id)
         if not records_dir.exists():
             return []
@@ -197,16 +339,26 @@ class ContextBankService:
         return self._records_dir(project_id) / f"event_{event_id}.json"
 
     async def add_agent_event(self, project_id: str, event: AgentEvent) -> AgentEvent:
-        event_file = self._event_file(project_id, event.event_id)
-
-        def _write() -> None:
-            event_file.parent.mkdir(parents=True, exist_ok=True)
-            event_file.write_text(
-                event.model_dump_json(indent=2),
-                encoding="utf-8",
+        if self._use_cosmos:
+            await self._upsert_document(
+                {
+                    "id": event.event_id,
+                    "project_id": project_id,
+                    "item_type": "agent_event",
+                    **event.model_dump(mode="json"),
+                }
             )
+        else:
+            event_file = self._event_file(project_id, event.event_id)
 
-        await asyncio.to_thread(_write)
+            def _write() -> None:
+                event_file.parent.mkdir(parents=True, exist_ok=True)
+                event_file.write_text(
+                    event.model_dump_json(indent=2),
+                    encoding="utf-8",
+                )
+
+            await asyncio.to_thread(_write)
 
         embedding = await self._embedding_service.embed_text(f"{event.title}\n{event.description}")
         await self._search_index.upsert(
@@ -231,6 +383,19 @@ class ContextBankService:
         target_agent: str | None = None,
         resolved: bool | None = False,
     ) -> list[AgentEvent]:
+        if self._use_cosmos:
+            items = await self._query_documents(project_id=project_id, item_type="agent_event")
+            events = [AgentEvent.model_validate(item) for item in items]
+            filtered: list[AgentEvent] = []
+            for event in events:
+                if target_agent is not None and event.target_agent != target_agent:
+                    continue
+                if resolved is not None and event.resolved != resolved:
+                    continue
+                filtered.append(event)
+            filtered.sort(key=lambda item: item.created_at, reverse=True)
+            return filtered
+
         records_dir = self._records_dir(project_id)
         if not records_dir.exists():
             return []
@@ -261,14 +426,24 @@ class ContextBankService:
                 event.resolved = True
                 event.resolved_at = datetime.now(timezone.utc)
                 event.resolved_by = resolved_by
-                event_file = self._event_file(project_id, event_id)
-
-                def _write() -> None:
-                    event_file.write_text(
-                        event.model_dump_json(indent=2),
-                        encoding="utf-8",
+                if self._use_cosmos:
+                    await self._upsert_document(
+                        {
+                            "id": event.event_id,
+                            "project_id": project_id,
+                            "item_type": "agent_event",
+                            **event.model_dump(mode="json"),
+                        }
                     )
+                else:
+                    event_file = self._event_file(project_id, event_id)
 
-                await asyncio.to_thread(_write)
+                    def _write() -> None:
+                        event_file.write_text(
+                            event.model_dump_json(indent=2),
+                            encoding="utf-8",
+                        )
+
+                    await asyncio.to_thread(_write)
                 return event
         return None
