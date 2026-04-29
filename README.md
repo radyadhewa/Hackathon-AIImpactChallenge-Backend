@@ -50,14 +50,16 @@ The backend works locally without Azure. To enable AI features:
    - `AZURE_AI_SEARCH_API_KEY` - Your search API key
    - `AZURE_AI_SEARCH_INDEX_NAME` - Index name (default: `keroyok-context-bank`)
 
-3. **Azure Cosmos DB (context bank + PM logs)** - Persist project memory and PM agent actions for consistency across Azure instances:
+3. **Azure Cosmos DB (recommended minimal footprint)** - For a free-tier setup, keep only project memory and secretary chat/meetings in Cosmos. Talent profiles and PM logs can stay on local JSON fallback:
    - `COSMOS_ENDPOINT`
    - `COSMOS_KEY`
    - `COSMOS_DATABASE`
    - `COSMOS_CONTEXT_CONTAINER` (default: `context-bank`)
-   - `COSMOS_PM_LOG_CONTAINER` (default: `pm-agent-logs`)
+   - `COSMOS_CHAT_CONTAINER` (default: `chat-data`)
+   - `COSMOS_PROFILE_CONTAINER` (optional, leave blank for local JSON)
+   - `COSMOS_PM_LOG_CONTAINER` (optional, leave blank for local JSON)
 
-If Cosmos settings are not configured, the context bank falls back to local JSON storage for development.
+If a Cosmos container setting is left blank, that storage domain falls back to local JSON.
 If Azure runtime settings are incomplete, the app falls back to a deterministic local runtime.
 
 For deployment architecture and Azure Functions setup details, see [docs/azure-functions-deployment.md](docs/azure-functions-deployment.md).
@@ -138,7 +140,7 @@ app/
 ## Key Concepts
 
 ### Context Bank
-All agents write to a shared **Context Bank** - local JSON storage backed by Azure AI Search. This serves as the audit trail and cross-agent communication layer.
+All agents write to a shared **Context Bank**. In the recommended Azure setup, this lives in Cosmos DB and is indexed by Azure AI Search; if Cosmos is not configured for that domain, it falls back to local JSON. This serves as the audit trail and cross-agent communication layer.
 
 ### Agent Events
 When Secretary or Talent agents create action items, they write **AgentEvent** records to the Context Bank. The PM Agent reads these events and responds.

@@ -36,7 +36,9 @@ The app reads settings from `.env` or environment variables.
 | `COSMOS_KEY` | Azure Cosmos DB key |
 | `COSMOS_DATABASE` | Cosmos DB database name |
 | `COSMOS_CONTEXT_CONTAINER` | Cosmos DB container name for the context bank |
-| `COSMOS_PM_LOG_CONTAINER` | Cosmos DB container name for PM logs |
+| `COSMOS_CHAT_CONTAINER` | Cosmos DB container name for chat and meeting data |
+| `COSMOS_PROFILE_CONTAINER` | Optional Cosmos container for freelancer profiles and match data; leave blank for local JSON |
+| `COSMOS_PM_LOG_CONTAINER` | Optional Cosmos container for PM logs; leave blank for local JSON |
 
 ---
 

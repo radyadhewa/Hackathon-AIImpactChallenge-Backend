@@ -53,7 +53,7 @@ def build_pm_service(settings: Settings) -> PMAgentService:
 
 def build_secretary_service(settings: Settings) -> SecretaryAgentService:
     context_bank = _build_context_bank(settings)
-    chat_service = ChatService(root_dir=settings.context_bank_dir)
+    chat_service = ChatService(root_dir=settings.context_bank_dir, settings=settings)
     runtime = _build_runtime(settings)
 
     return SecretaryAgentService(
@@ -69,6 +69,7 @@ def build_talent_service(settings: Settings) -> TalentAgentService:
     profile_service = ProfileService(
         root_dir=settings.context_bank_dir,
         embedding_service=embedding_service,
+        settings=settings,
     )
     runtime = _build_runtime(settings)
 

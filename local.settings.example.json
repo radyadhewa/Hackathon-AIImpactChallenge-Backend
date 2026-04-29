@@ -22,6 +22,8 @@
     "COSMOS_KEY": "",
     "COSMOS_DATABASE": "keroyok-ai",
     "COSMOS_CONTEXT_CONTAINER": "context-bank",
-    "COSMOS_PM_LOG_CONTAINER": "pm-agent-logs"
+    "COSMOS_CHAT_CONTAINER": "chat-data",
+    "COSMOS_PROFILE_CONTAINER": "",
+    "COSMOS_PM_LOG_CONTAINER": ""
   }
 }

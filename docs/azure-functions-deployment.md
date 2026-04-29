@@ -14,7 +14,7 @@ flowchart LR
   A --> S[Secretary Agent]
   A --> T[Talent Agent]
 
-  PM --> C[Context Bank\nLocal JSON files]
+  PM --> C[Context Bank\nCosmos DB or Local JSON]
   S --> C
   T --> C
 
@@ -22,7 +22,9 @@ flowchart LR
   S --> X
   T --> X
 
-  PM --> DB[Cosmos DB\nPM logs]
+  S --> DB2[Cosmos DB\nChat + Meetings]
+  PM --> L1[Local JSON\nPM logs fallback]
+  T --> L2[Local JSON\nProfiles + Matches fallback]
 
   PM --> AOAI[Azure AI Foundry\nChat + Embeddings]
   S --> AOAI
@@ -39,9 +41,10 @@ flowchart LR
    - `/api/v1/talent/*`
 4. The selected agent executes business logic.
 5. Data is persisted to:
-   - local context bank JSON files
+   - Cosmos DB for project memory in the recommended Azure setup
    - Azure AI Search for retrieval/vector search
-   - Cosmos DB for PM audit logs
+   - Cosmos DB for secretary chat/meeting history
+   - local JSON fallback for optional domains such as PM logs and talent profiles
 6. If Azure AI Foundry is unavailable, the app falls back to local deterministic runtime behavior.
 
 ## 3. Repository files involved
@@ -84,7 +87,9 @@ flowchart LR
 - `COSMOS_KEY`
 - `COSMOS_DATABASE=keroyok-ai`
 - `COSMOS_CONTEXT_CONTAINER=context-bank`
-- `COSMOS_PM_LOG_CONTAINER=pm-agent-logs`
+- `COSMOS_CHAT_CONTAINER=chat-data`
+- `COSMOS_PROFILE_CONTAINER=` (optional; blank keeps talent data on local JSON)
+- `COSMOS_PM_LOG_CONTAINER=` (optional; blank keeps PM logs on local JSON)
 
 ## 5. Deployment files
 
@@ -128,8 +133,14 @@ Use this as a template for local development. Copy it to `local.settings.json` a
 1. Create an Azure Function App (Python 3.11).
 2. Configure app settings in Azure Portal.
 3. Ensure the storage account exists.
-4. Publish using Azure Functions Core Tools or CI/CD.
-5. Validate the root endpoint and each agent endpoint.
+4. Create or allow automatic creation of these Cosmos containers for the free-tier-friendly baseline:
+   - `context-bank` with partition key `/project_id`
+   - `chat-data` with partition key `/project_id`
+   Optional containers if you later want more Cosmos-backed persistence:
+   - `talent-data` with partition key `/scope_id`
+   - `pm-agent-logs` with partition key `/project_id`
+5. Publish using Azure Functions Core Tools or CI/CD.
+6. Validate the root endpoint and each agent endpoint.
 
 ## 8. Operational notes
 

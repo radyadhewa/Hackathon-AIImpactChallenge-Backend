@@ -357,16 +357,9 @@ class TalentAgentService:
         )
 
     async def get_match_details(self, match_id: str) -> MatchResultResponse:
-        matches_dir = self._profile_service._matches_dir()
-        match_file = matches_dir / f"{match_id}.json"
-
-        if not match_file.exists():
+        match = await self._profile_service.get_match(match_id)
+        if not match:
             raise HTTPException(status_code=404, detail="Match not found")
-
-        def _read() -> MatchResult:
-            return MatchResult.model_validate_json(match_file.read_text(encoding="utf-8"))
-
-        match = await asyncio.to_thread(_read)
         profile = await self._profile_service.get_profile(match.profile_id)
 
         if not profile:

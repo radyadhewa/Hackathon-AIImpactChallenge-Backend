@@ -11,3 +11,4 @@ local.settings.example.json
 data/context_bank/
 tests/
 keroyok_ai_backend.egg-info/
+
