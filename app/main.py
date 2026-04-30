@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.pm_agent import router as pm_agent_router
 from app.api.routes.secretary_agent import router as secretary_agent_router
@@ -23,6 +24,13 @@ def create_app(
         version="0.3.0",
         description="AI backend for Keroyok.AI - Agentic AI Talent Marketplace & Project Manager",
     )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=resolved_settings.cors_allowed_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.state.settings = resolved_settings
     app.state.pm_service = resolved_pm_service
     app.state.secretary_service = resolved_secretary_service
@@ -45,4 +53,3 @@ def create_app(
 
 
 app = create_app()
-

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     context_bank_dir: Path = Path("data/context_bank")
     use_microsoft_agent_framework: bool = True
+    cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     azure_foundry_endpoint: str | None = None
     azure_foundry_api_key: SecretStr | None = None
@@ -56,6 +57,10 @@ class Settings(BaseSettings):
         if self.cosmos_key is None:
             return None
         return self.cosmos_key.get_secret_value()
+
+    @property
+    def cors_allowed_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
 
 
 @lru_cache(maxsize=1)

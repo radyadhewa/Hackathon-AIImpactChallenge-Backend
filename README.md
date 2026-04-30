@@ -1,4 +1,4 @@
-# Keroyok.AI Backend
+# Kirjau Backend
 
 Agentic AI-powered talent marketplace with 3 integrated agents: Talent Acquisition, PM (Project Manager), and Secretary.
 
@@ -25,6 +25,8 @@ copy .env.example .env
 ```
 
 Edit `.env` with your settings. See Azure Setup section below.
+
+If you run a frontend at `http://localhost:3000`, keep that origin in `CORS_ALLOWED_ORIGINS` so the browser can call the API.
 
 ### 4. Run the server
 
@@ -97,7 +99,7 @@ app/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    KERoyok.AI BACKEND                       │
+│                    KIRJAU BACKEND                       │
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
 │  │  Agent 1     │  │  Agent 2     │  │  Agent 3     │        │
