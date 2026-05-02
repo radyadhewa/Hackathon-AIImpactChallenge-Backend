@@ -28,14 +28,26 @@ def get_pm_service(request: Request) -> PMAgentService:
     return request.app.state.pm_service
 
 
-@router.get("/health", response_model=HealthResponse)
-async def health(service: PMAgentService = Depends(get_pm_service)) -> HealthResponse:
-    return HealthResponse(
-        status="ok",
-        runtime=service.runtime_name,
-        context_bank=service.context_bank_name,
-        log_store=service.log_store_name,
-    )
+@router.get("/health")
+async def health(service: PMAgentService = Depends(get_pm_service)) -> dict:
+    search_index = service._context_bank._search_index if hasattr(service, '_context_bank') else None
+    azure_search_status = "not_available"
+    if search_index:
+        if search_index.enabled:
+            azure_search_status = "connected" if search_index._index_ready else "configured_not_ready"
+        else:
+            azure_search_status = "disabled"
+
+    settings = service._context_bank._settings if hasattr(service, '_context_bank') else None
+
+    return {
+        "status": "ok",
+        "runtime": service.runtime_name,
+        "context_bank": service.context_bank_name,
+        "log_store": service.log_store_name,
+        "azure_search": azure_search_status,
+        "cors_origins": settings.cors_allowed_origin_list if settings else [],
+    }
 
 
 @router.post("/projects/bootstrap", response_model=ProjectContextResponse)
